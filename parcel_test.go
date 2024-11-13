@@ -2,12 +2,13 @@ package main
 
 import (
 	"database/sql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+
 	"math/rand"
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -35,21 +36,28 @@ func TestAddGetDelete(t *testing.T) {
 	id, err := store.Add(parcel)
 	require.NoError(t, err)
 	require.NotEmpty(t, id)
+	parcel.Number = id
 
 	storedParcel, err := store.Get(id)
 	require.NoError(t, err)
-	assert.False(t, reflect.DeepEqual(parcel, storedParcel), "Stored parcel does not match the original parcel")
+	assert.Equal(t, parcel.Number, storedParcel.Number, "Parcel Number does not match")
+	assert.Equal(t, parcel.Client, storedParcel.Client, "Parcel Client does not match")
+	assert.Equal(t, parcel.Status, storedParcel.Status, "Parcel Status does not match")
+	assert.Equal(t, parcel.Address, storedParcel.Address, "Parcel Address does not match")
+	assert.Equal(t, parcel.CreatedAt, storedParcel.CreatedAt, "Parcel CreatedAt does not match")
 
-	storedParcelById, err := store.Get(id)
-	require.NoError(t, err)
+	// storedParcelById, err := store.Get(id)
+	// require.NoError(t, err)
 
-	assert.False(t, reflect.DeepEqual(parcel, storedParcelById), "Stored parcel by ID does not match the original parcel")
+	//assert.False(t, reflect.DeepEqual(parcel, storedParcelById), "Stored parcel by ID does not match the original parcel")
 
 	err = store.Delete(parcel.Number)
 	require.NoError(t, err)
 
 	_, err = store.Get(parcel.Number)
 	require.Error(t, err)
+
+	assert.ErrorIs(t, err, sql.ErrNoRows, "Expected error to be sql.ErrNoRows")
 
 }
 
@@ -128,7 +136,8 @@ func TestGetByClient(t *testing.T) {
 
 	storedParcels, err := store.GetByClient(client)
 	require.NoError(t, err)
-	assert.Equal(t, len(parcelMap), len(storedParcels))
+	assert.Len(t, storedParcels, len(parcelMap))
+	// assert.Equal(t, len(parcelMap), len(storedParcels))
 
 	for _, parcel := range storedParcels {
 		_, ok := parcelMap[parcel.Number]
